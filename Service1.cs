@@ -22,26 +22,17 @@ namespace ASTAWebServer
         /// <summary>
         /// Store the list of online users. Wish I had a ConcurrentList. 
         /// </summary>
-        protected static ConcurrentDictionary<User, string> OnlineUsers = new ConcurrentDictionary<User, string>();
+        protected static ConcurrentDictionary<User, string> OnlineUsers;
 
 
         private System.Timers.Timer timer = null;
         private Thread webThread = null;
-        Logger log = null;
+       static readonly Logger log = new Logger();
 
         public ASTAWebServer()
         {
-            InitializeComponent();
-
-            aServer = new WebSocketServer(5000, IPAddress.Any)
-            {
-                OnReceive = OnReceive,
-                OnSend = OnSend,
-                OnConnected = OnConnect,
-                OnDisconnect = OnDisconnect,
-                TimeOut = new TimeSpan(0, 5, 0)
-            };
-        }
+            InitializeComponent();            
+         }
 
 
         protected override void OnStart(string[] args)
@@ -51,13 +42,22 @@ namespace ASTAWebServer
 
         internal void Start()
         {
+            OnlineUsers = new ConcurrentDictionary<User, string>();
+            aServer = new WebSocketServer(5000, IPAddress.Any)
+            {
+                OnReceive = OnReceive,
+                OnSend = OnSend,
+                OnConnected = OnConnect,
+                OnDisconnect = OnDisconnect,
+                TimeOut = new TimeSpan(0, 5, 0)
+            };
+
             if (webThread == null)
             {
                 webThread = new Thread(new ThreadStart(StartWebSocket));
                 webThread.SetApartmentState(ApartmentState.STA);
                 webThread.IsBackground = true;
             }
-
             webThread.Start();
 
             timer = new System.Timers.Timer(10000);//создаём объект таймера
@@ -71,20 +71,35 @@ namespace ASTAWebServer
             try
             {
                 timer.Enabled = false;
-                timer.Stop();
+                timer?.Stop();
+                timer?.Dispose();
+                WriteString("timer was stoped.");
             }
-            catch { }
+            catch (Exception err)
+            {
+                WriteString("timer wasn't stoped: " + err.Message);
+            }
             try
             {
-                //Console.ReadLine();
-                //Console.ReadKey();
-
                 aServer.Stop();
-                WriteString("Finish");
+                aServer?.Dispose();
+                OnlineUsers = null;
+                WriteString("Websocket server was stoped.");
             }
-            catch { }
+            catch (Exception err)
+            {
+                WriteString("Websocket server wasn't stoped: " + err.Message);
+            }
 
-            try { webThread?.Abort(); } catch { }
+            try
+            {
+                webThread?.Abort();
+                WriteString("Websocket's thread was stoped.");
+            }
+            catch (Exception err)
+            {
+                WriteString("Websocket's thread wasn't stoped: " + err.Message);
+            }
         }
 
         public void WriteString(string text)
@@ -92,44 +107,27 @@ namespace ASTAWebServer
             if (log != null)
                 log.WriteString(text);
         }
-
-
+        
         private void StartWebSocket()
         {
-            // Initialize the server on port 81, accept any IPs, and bind events.
-
-
+            // Initialize the server on port 5000, accept any IPs, and bind events.
             aServer.Start();
-
-            // Accept commands on the console and keep it alive
-            var command = string.Empty;
-            //while (command != "exit")
-            {
-                //command = Console.ReadLine();
-                //Console.ReadKey();
-            }
-
-            //Console.ReadLine();
-            //Console.ReadKey();
         }
 
         private void timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            //timer.Enabled = false;
-            //timer.Stop();
-            log.WriteString("Check working Elapsed");
+            timer.Enabled = false;
+            timer.Stop();
 
-            ////Запускаем процедуру (чего хотим выполнить по таймеру).
+            WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
 
-            ////  Task.Run(()=>  ClientSendAsync( "Hello"));
-
-            //timer.Enabled = true;
-            //timer.Start();
+            timer.Enabled = true;
+            timer.Start();
         }
 
         private  void WebSocket_EvntInfoMessage(object sender, TextEventArgs e)
         {
-            log.WriteString(e.Message);
+            WriteString(e.Message);
         }
 
         /// <summary>
@@ -139,7 +137,7 @@ namespace ASTAWebServer
         /// <param name="context">The user's connection context</param>
         public  void OnConnect(UserContext context)
         {
-            WriteString("Client Connected from : " + context.ClientAddress);
+            WriteString("Client Connected from: " + context.ClientAddress);
 
             var me = new User { Context = context };
 
@@ -154,7 +152,7 @@ namespace ASTAWebServer
         public  void OnReceive(UserContext context)
         {
             var json = context.DataFrame.ToString();
-            WriteString($"Получены от: \"{context.ClientAddress}\" \"сырые\" данные: {json}");
+            WriteString($"От: \"{context.ClientAddress}\" получены \"сырые\" данные: {json}");
 
             Response r = null;
             try
@@ -167,27 +165,28 @@ namespace ASTAWebServer
                 {
                     case (int)CommandType.Register:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        WriteString("Получена регистрация: " + obj?.Name?.Value);
-
-                        //    Register(obj.Name.Value, context);
+                        WriteString($"Получен запрос на регистрацию: {obj?.Name?.Value}") ;
+                        try { Register(obj.Name.Value, context); }
+                        catch(Exception err) { WriteString($"Ошибка Register: {err.Message}"); }
                         break;
+
                     case (int)CommandType.Message:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Data}" };
-                        WriteString("Получено сообщение: " + obj?.Data?.Value);
-
-                        //   ChatMessage(obj.Message.Value, context);
+                        WriteString($"Получено сообщение: {obj?.Data?.Value}");
+                        try { ChatMessage(obj.Data.Value, context); }
+                        catch (Exception err) { WriteString($"Ошибка ChatMessage: {err.Message}"); }
                         break;
+
                     case (int)CommandType.NameChange:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        WriteString("Смена имени: " + obj?.Name?.Value);
-
-                        //  NameChange(obj.Name.Value, context);
+                        WriteString($"Смена имени: {obj?.Name?.Value}");
+                        try { NameChange(obj.Name.Value, context); }
+                        catch (Exception err) { WriteString($"Ошибка NameChange: {err.Message}"); }
                         break;
                 }
             }
             catch (Exception e) // Bad JSON! For shame.
             {
-                //  var r = new Response { Type = ResponseType.Error, Data = new { V =$"what did you want to say? {json} +{e.Message}" } };
                 r = new Response { Type = ResponseType.Message, Data = $" Сейчас {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
             }
             context.Send(JsonConvert.SerializeObject(r));
