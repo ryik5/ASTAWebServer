@@ -419,7 +419,7 @@ namespace ASTAWebServer
         private void RecordEntry(string eventText, string text)
         {
             string path = Assembly.GetExecutingAssembly().Location;
-            string pathToLog = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), System.IO.Path.GetFileNameWithoutExtension(path) + ".log");
+            string pathToLog = "d:\\temp.log"; //System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), System.IO.Path.GetFileNameWithoutExtension(path) + ".log");
             lock (obj)
             {
                 using (System.IO.StreamWriter writer = new System.IO.StreamWriter(pathToLog, true))
