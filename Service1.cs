@@ -27,12 +27,11 @@ namespace ASTAWebServer
 
         private System.Timers.Timer timer = null;
         private Thread webThread = null;
-        Logger log = null;
+       static readonly Logger log = new Logger();
 
         public ASTAWebServer()
         {
-            InitializeComponent();
-            log = new Logger();
+            InitializeComponent();            
          }
 
 
@@ -117,16 +116,13 @@ namespace ASTAWebServer
 
         private void timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            //timer.Enabled = false;
-            //timer.Stop();
-            WriteString("Timer is working...");
+            timer.Enabled = false;
+            timer.Stop();
 
-            ////Запускаем процедуру (чего хотим выполнить по таймеру).
+            WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
 
-            ////  Task.Run(()=>  ClientSendAsync( "Hello"));
-
-            //timer.Enabled = true;
-            //timer.Start();
+            timer.Enabled = true;
+            timer.Start();
         }
 
         private  void WebSocket_EvntInfoMessage(object sender, TextEventArgs e)
@@ -169,27 +165,28 @@ namespace ASTAWebServer
                 {
                     case (int)CommandType.Register:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        WriteString("Получена регистрация: " + obj?.Name?.Value);
-
-                        //    Register(obj.Name.Value, context);
+                        WriteString($"Получен запрос на регистрацию: {obj?.Name?.Value}") ;
+                        try { Register(obj.Name.Value, context); }
+                        catch(Exception err) { WriteString($"Ошибка Register: {err.Message}"); }
                         break;
+
                     case (int)CommandType.Message:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Data}" };
-                        WriteString("Получено сообщение: " + obj?.Data?.Value);
-
-                        //   ChatMessage(obj.Message.Value, context);
+                        WriteString($"Получено сообщение: {obj?.Data?.Value}");
+                        try { ChatMessage(obj.Data.Value, context); }
+                        catch (Exception err) { WriteString($"Ошибка ChatMessage: {err.Message}"); }
                         break;
+
                     case (int)CommandType.NameChange:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        WriteString("Смена имени: " + obj?.Name?.Value);
-
-                        //  NameChange(obj.Name.Value, context);
+                        WriteString($"Смена имени: {obj?.Name?.Value}");
+                        try { NameChange(obj.Name.Value, context); }
+                        catch (Exception err) { WriteString($"Ошибка NameChange: {err.Message}"); }
                         break;
                 }
             }
             catch (Exception e) // Bad JSON! For shame.
             {
-                //  var r = new Response { Type = ResponseType.Error, Data = new { V =$"what did you want to say? {json} +{e.Message}" } };
                 r = new Response { Type = ResponseType.Message, Data = $" Сейчас {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
             }
             context.Send(JsonConvert.SerializeObject(r));
