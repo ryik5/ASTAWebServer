@@ -37,6 +37,8 @@ namespace ASTAWebServer
         internal void Start()
         {
             OnlineUsers = new System.Collections.Concurrent.ConcurrentDictionary<User, string>();
+            //https://github.com/Olivine-Labs/Alchemy-Websockets
+            //https://docs.supersocket.net/v2-0/en-US/Get-the-connected-event-and-closed-event-of-a-connection
             aServer = new WebSocketServer(5000, System.Net.IPAddress.Any)
             {
                 OnReceive = OnReceive,
