@@ -1,18 +1,12 @@
-﻿using System;
-using System.ComponentModel;
-using System.Reflection;
+﻿using Alchemy;
+using Alchemy.Classes;
+using Newtonsoft.Json;
+using System;
 using System.Configuration.Install;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-using Newtonsoft.Json;
-using System.Threading;
-using System.Timers;
-using Alchemy;
-using Alchemy.Classes;
-using System.Net;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Collections.Generic;
+
 
 namespace ASTAWebServer
 {
@@ -22,17 +16,17 @@ namespace ASTAWebServer
         /// <summary>
         /// Store the list of online users. Wish I had a ConcurrentList. 
         /// </summary>
-        protected static ConcurrentDictionary<User, string> OnlineUsers;
+        protected static System.Collections.Concurrent.ConcurrentDictionary<User, string> OnlineUsers;
 
 
         private System.Timers.Timer timer = null;
-        private Thread webThread = null;
-       static readonly Logger log = new Logger();
+        private System.Threading.Thread webThread = null;
+        static readonly Logger log = new Logger();
 
         public ASTAWebServer()
         {
-            InitializeComponent();            
-         }
+            InitializeComponent();
+        }
 
 
         protected override void OnStart(string[] args)
@@ -42,8 +36,8 @@ namespace ASTAWebServer
 
         internal void Start()
         {
-            OnlineUsers = new ConcurrentDictionary<User, string>();
-            aServer = new WebSocketServer(5000, IPAddress.Any)
+            OnlineUsers = new System.Collections.Concurrent.ConcurrentDictionary<User, string>();
+            aServer = new WebSocketServer(5000, System.Net.IPAddress.Any)
             {
                 OnReceive = OnReceive,
                 OnSend = OnSend,
@@ -54,14 +48,14 @@ namespace ASTAWebServer
 
             if (webThread == null)
             {
-                webThread = new Thread(new ThreadStart(StartWebSocket));
-                webThread.SetApartmentState(ApartmentState.STA);
+                webThread = new System.Threading.Thread(new System.Threading.ThreadStart(StartWebSocket));
+                webThread.SetApartmentState(System.Threading.ApartmentState.STA);
                 webThread.IsBackground = true;
             }
             webThread.Start();
 
             timer = new System.Timers.Timer(10000);//создаём объект таймера
-            timer.Elapsed += new ElapsedEventHandler(timer_Elapsed);
+            timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
             timer.Enabled = true;
             timer.Start();
         }
@@ -107,14 +101,14 @@ namespace ASTAWebServer
             if (log != null)
                 log.WriteString(text);
         }
-        
+
         private void StartWebSocket()
         {
             // Initialize the server on port 5000, accept any IPs, and bind events.
             aServer.Start();
         }
 
-        private void timer_Elapsed(object sender, ElapsedEventArgs e)
+        private void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             timer.Enabled = false;
             timer.Stop();
@@ -125,7 +119,7 @@ namespace ASTAWebServer
             timer.Start();
         }
 
-        private  void WebSocket_EvntInfoMessage(object sender, TextEventArgs e)
+        private void WebSocket_EvntInfoMessage(object sender, TextEventArgs e)
         {
             WriteString(e.Message);
         }
@@ -135,7 +129,7 @@ namespace ASTAWebServer
         /// Adds the client to the online users list.
         /// </summary>
         /// <param name="context">The user's connection context</param>
-        public  void OnConnect(UserContext context)
+        public void OnConnect(UserContext context)
         {
             WriteString("Client Connected from: " + context.ClientAddress);
 
@@ -149,7 +143,7 @@ namespace ASTAWebServer
         /// Parses data as JSON and calls the appropriate message or sends an error message.
         /// </summary>
         /// <param name="context">The user's connection context</param>
-        public  void OnReceive(UserContext context)
+        public void OnReceive(UserContext context)
         {
             var json = context.DataFrame.ToString();
             WriteString($"От: \"{context.ClientAddress}\" получены \"сырые\" данные: {json}");
@@ -165,9 +159,9 @@ namespace ASTAWebServer
                 {
                     case (int)CommandType.Register:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        WriteString($"Получен запрос на регистрацию: {obj?.Name?.Value}") ;
+                        WriteString($"Получен запрос на регистрацию: {obj?.Name?.Value}");
                         try { Register(obj.Name.Value, context); }
-                        catch(Exception err) { WriteString($"Ошибка Register: {err.Message}"); }
+                        catch (Exception err) { WriteString($"Ошибка Register: {err.Message}"); }
                         break;
 
                     case (int)CommandType.Message:
@@ -197,7 +191,7 @@ namespace ASTAWebServer
         /// Logs the data to the console and performs no further action.
         /// </summary>
         /// <param name="context">The user's connection context</param>
-        public  void OnSend(UserContext context)
+        public void OnSend(UserContext context)
         {
             var json = context.DataFrame.ToString();
             WriteString($"Отправил: {context.ClientAddress} сообщение: {json}");
@@ -209,7 +203,7 @@ namespace ASTAWebServer
         /// to all connected users.
         /// </summary>
         /// <param name="context">The user's connection context</param>
-        public  void OnDisconnect(UserContext context)
+        public void OnDisconnect(UserContext context)
         {
             WriteString("Client Disconnected : " + context.ClientAddress);
             var user = OnlineUsers.Keys.Where(o => o.Context.ClientAddress == context.ClientAddress).Single();
@@ -233,7 +227,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="name">The name to register the user under</param>
         /// <param name="context">The user's connection context</param>
-        private  void Register(string name, UserContext context)
+        private void Register(string name, UserContext context)
         {
             var u = OnlineUsers.Keys.Where(o => o.Context.ClientAddress == context.ClientAddress).Single();
             var r = new Response();
@@ -261,7 +255,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="message">The chat message to be broadcasted</param>
         /// <param name="context">The user's connection context</param>
-        private  void ChatMessage(string message, UserContext context)
+        private void ChatMessage(string message, UserContext context)
         {
             var u = OnlineUsers.Keys.Where(o => o.Context.ClientAddress == context.ClientAddress).Single();
             var r = new Response { Type = ResponseType.Message, Data = new { u.Name, Message = message } };
@@ -274,7 +268,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="name">The name to be changed to</param>
         /// <param name="aContext">The user's connection context</param>
-        private  void NameChange(string name, UserContext aContext)
+        private void NameChange(string name, UserContext aContext)
         {
             var u = OnlineUsers.Keys.Where(o => o.Context.ClientAddress == aContext.ClientAddress).Single();
 
@@ -303,7 +297,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="errorMessage">Details of the error</param>
         /// <param name="context">The user's connection context</param>
-        private  void SendError(string errorMessage, UserContext context)
+        private void SendError(string errorMessage, UserContext context)
         {
             var r = new Response { Type = ResponseType.Error, Data = new { Message = errorMessage } };
 
@@ -313,7 +307,7 @@ namespace ASTAWebServer
         /// <summary>
         /// Broadcasts a list of all online users to all online users
         /// </summary>
-        private  void BroadcastNameList()
+        private void BroadcastNameList()
         {
             var r = new Response
             {
@@ -328,7 +322,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="message">Message to be broadcast</param>
         /// <param name="users">Optional list of users to broadcast to. If null, broadcasts to all. Defaults to null.</param>
-        private  void Broadcast(string message, ICollection<User> users = null)
+        private void Broadcast(string message, System.Collections.Generic.ICollection<User> users = null)
         {
             if (users == null)
             {
@@ -351,7 +345,7 @@ namespace ASTAWebServer
         /// </summary>
         /// <param name="name">Name to check</param>
         /// <returns></returns>
-        private  bool ValidateName(string name)
+        private bool ValidateName(string name)
         {
             var isValid = false;
             if (name.Length > 3 && name.Length < 25)
@@ -417,7 +411,7 @@ namespace ASTAWebServer
         }
         private void RecordEntry(string eventText, string text)
         {
-            string path = Assembly.GetExecutingAssembly().Location;
+            string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string pathToLog = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), System.IO.Path.GetFileNameWithoutExtension(path) + ".log");
             lock (obj)
             {
@@ -433,7 +427,7 @@ namespace ASTAWebServer
     /// <summary>
     /// Утилита саморегистрации
     /// </summary>
-    [RunInstaller(true)]
+    [System.ComponentModel.RunInstaller(true)]
     public partial class ServiceInstallerUtility : Installer
     {
         //https://www.c-sharpcorner.com/article/installing-a-service-programmatically/
@@ -444,7 +438,7 @@ namespace ASTAWebServer
         static ServiceInstaller serviceInstaller;
         readonly ServiceProcessInstaller processInstaller;
 
-        public static readonly string serviceExePath = Assembly.GetExecutingAssembly().Location;
+        public static readonly string serviceExePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
         public static readonly string serviceName = "ASTAWebServer";
         public static readonly string serviceDisplayName = "ASTA Web Server";
         public static readonly string serviceDescription = "ASTA Websocker SuperServer";
