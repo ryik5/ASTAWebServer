@@ -39,6 +39,7 @@ namespace ASTAWebServer
             OnlineUsers = new System.Collections.Concurrent.ConcurrentDictionary<User, string>();
             //https://github.com/Olivine-Labs/Alchemy-Websockets
             //https://docs.supersocket.net/v2-0/en-US/Get-the-connected-event-and-closed-event-of-a-connection
+            // Initialize the server on port 5000, accept any IPs, and bind events.
             aServer = new WebSocketServer(5000, System.Net.IPAddress.Any)
             {
                 OnReceive = OnReceive,
@@ -90,6 +91,7 @@ namespace ASTAWebServer
             try
             {
                 webThread?.Abort();
+                webThread = null;
                 WriteString("Websocket's thread was stoped.");
             }
             catch (Exception err)
@@ -106,7 +108,6 @@ namespace ASTAWebServer
 
         private void StartWebSocket()
         {
-            // Initialize the server on port 5000, accept any IPs, and bind events.
             aServer.Start();
         }
 
@@ -162,7 +163,7 @@ namespace ASTAWebServer
                     case (int)CommandType.Register:
                         r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
                         WriteString($"Получен запрос на регистрацию: {obj?.Name?.Value}");
-                        try { Register(obj.Name.Value, context); }
+                        try { Register(obj.Name, context); }
                         catch (Exception err) { WriteString($"Ошибка Register: {err.Message}"); }
                         break;
 
@@ -441,23 +442,27 @@ namespace ASTAWebServer
         readonly ServiceProcessInstaller processInstaller;
 
         public static readonly string serviceExePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        public static readonly string serviceName = "ASTAWebServer";
-        public static readonly string serviceDisplayName = "ASTA Web Server";
-        public static readonly string serviceDescription = "ASTA Websocker SuperServer";
-        private static int timeoutMilliseconds = 2000;
+        public static  string serviceName => "ASTAWebServer";
+        public static  string serviceDisplayName => "ASTA Web Server";
+        public static  string serviceDescription => "ASTA Websocket SuperServer's gathering windows service";
+        private static  int timeoutMilliseconds => 2000;
         public ServiceInstallerUtility()
         {
             //InitializeComponent();
-            processInstaller = new ServiceProcessInstaller();
-            processInstaller.Account = ServiceAccount.LocalSystem;
+            processInstaller = new ServiceProcessInstaller
+            {
+                Account = ServiceAccount.LocalSystem
+            };
 
-            serviceInstaller = new ServiceInstaller();
-            serviceInstaller.StartType = ServiceStartMode.Automatic;
-            serviceInstaller.ServiceName = serviceName;
+            serviceInstaller = new ServiceInstaller
+            {
+                StartType = ServiceStartMode.Automatic,
+                //DelayedAutoStart = true,
+                ServiceName = serviceName,
+                DisplayName = serviceDisplayName,
+                Description = serviceDescription
+            };
             serviceInstaller.AfterInstall += new InstallEventHandler(ServiceInstaller_AfterInstall);
-            //           serviceInstaller.DelayedAutoStart = true;
-            serviceInstaller.DisplayName = serviceDisplayName;
-            serviceInstaller.Description = serviceDescription;
 
             Installers.Add(processInstaller);
             Installers.Add(serviceInstaller);
@@ -606,10 +611,9 @@ namespace ASTAWebServer
 
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 EvntInfoMessage?.Invoke(this, new TextEventArgs(ex.Message));
-                //System.Windows.Forms.MessageBox.Show(ex.Message);
             }
         }
     }
