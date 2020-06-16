@@ -152,12 +152,21 @@ namespace ASTAWebServer
             WriteString($"От: \"{context.ClientAddress}\" получены \"сырые\" данные: {json}");
 
             Response r = null;
+            dynamic obj = null;
             try
             {
                 // <3 dynamics
-                dynamic obj = JsonConvert.DeserializeObject(json);
+                obj = JsonConvert.DeserializeObject(json);
 
                 WriteString($"Десериализованные данные: {obj}");
+            }
+            catch (Exception e) // Bad JSON! For shame.
+            {
+                r = new Response { Type = ResponseType.Message, Data = $" Сейчас {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
+            }
+
+            if (obj != null)
+            {
                 switch ((int)obj.Type)
                 {
                     case (int)CommandType.Register:
@@ -181,10 +190,6 @@ namespace ASTAWebServer
                         catch (Exception err) { WriteString($"Ошибка NameChange: {err.Message}"); }
                         break;
                 }
-            }
-            catch (Exception e) // Bad JSON! For shame.
-            {
-                r = new Response { Type = ResponseType.Message, Data = $" Сейчас {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
             }
             context.Send(JsonConvert.SerializeObject(r));
         }
