@@ -17,15 +17,15 @@ namespace ASTAWebServer
         /// Store the list of online users. Wish I had a ConcurrentList. 
         /// </summary>
         protected static System.Collections.Concurrent.ConcurrentDictionary<User, string> OnlineUsers;
-
-
+        
         private System.Timers.Timer timer = null;
         private System.Threading.Thread webThread = null;
-        static readonly Logger log = new Logger();
+        static  Logger log = null;
 
         public ASTAWebServer()
         {
             InitializeComponent();
+            log = new Logger();
         }
 
 
@@ -120,11 +120,6 @@ namespace ASTAWebServer
 
             timer.Enabled = true;
             timer.Start();
-        }
-
-        private void WebSocket_EvntInfoMessage(object sender, TextEventArgs e)
-        {
-            WriteString(e.Message);
         }
 
         /// <summary>
