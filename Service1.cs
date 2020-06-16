@@ -46,7 +46,7 @@ namespace ASTAWebServer
                 OnSend = OnSend,
                 OnConnected = OnConnect,
                 OnDisconnect = OnDisconnect,
-                TimeOut = new TimeSpan(0, 5, 0)
+                TimeOut = new TimeSpan(0, 5, 0)                 
             };
 
             if (webThread == null)
