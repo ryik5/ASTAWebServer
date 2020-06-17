@@ -57,7 +57,7 @@ namespace ASTAWebServer
             }
             webThread.Start();
 
-            timer = new System.Timers.Timer(10000);//создаём объект таймера
+            timer = new System.Timers.Timer(30000);//создаём объект таймера
             timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
             timer.Enabled = true;
             timer.Start();
@@ -116,7 +116,25 @@ namespace ASTAWebServer
             timer.Enabled = false;
             timer.Stop();
 
-            WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
+            if(OnlineUsers!=null&& OnlineUsers?.Keys?.Count>0)
+            foreach (var u in OnlineUsers.Keys)
+            {
+                try {
+                      var  r = new Response { Type = ResponseType.Message, Data = $"SendCollectedData" };
+                        u.Context.Send(JsonConvert.SerializeObject(r)); 
+                    }
+                catch (Exception err){
+                    WriteString($"Error: {err.Message}");
+                };
+
+                try { WriteString($"{u.Name}({u.Context.ClientAddress}) отправьте информацию"); }
+                catch (Exception err)
+                {
+                    WriteString($"Error: {err.Message}");
+                };
+            }
+
+            //WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
 
             timer.Enabled = true;
             timer.Start();
