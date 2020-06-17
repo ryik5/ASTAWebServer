@@ -17,10 +17,10 @@ namespace ASTAWebServer
         /// Store the list of online users. Wish I had a ConcurrentList. 
         /// </summary>
         protected static System.Collections.Concurrent.ConcurrentDictionary<User, string> OnlineUsers;
-        
+
         private System.Timers.Timer timer = null;
         private System.Threading.Thread webThread = null;
-        static  Logger log = null;
+        static Logger log = null;
 
         public ASTAWebServer()
         {
@@ -46,21 +46,21 @@ namespace ASTAWebServer
                 OnSend = OnSend,
                 OnConnected = OnConnect,
                 OnDisconnect = OnDisconnect,
-                TimeOut = new TimeSpan(0, 5, 0)                 
+                TimeOut = new TimeSpan(0, 5, 0)
             };
 
             if (webThread == null)
             {
                 webThread = new System.Threading.Thread(new System.Threading.ThreadStart(StartWebSocket));
-                webThread.SetApartmentState(System.Threading.ApartmentState.STA);
                 webThread.IsBackground = true;
+                webThread.SetApartmentState(System.Threading.ApartmentState.STA);
             }
             webThread.Start();
 
             timer = new System.Timers.Timer(30000);//создаём объект таймера
-            timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
             timer.Enabled = true;
             timer.Start();
+            timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
         }
 
         protected override void OnStop()
@@ -116,23 +116,25 @@ namespace ASTAWebServer
             timer.Enabled = false;
             timer.Stop();
 
-            if(OnlineUsers!=null&& OnlineUsers?.Keys?.Count>0)
-            foreach (var u in OnlineUsers.Keys)
-            {
-                try {
-                      var  r = new Response { Type = ResponseType.Message, Data = $"SendCollectedData" };
-                        u.Context.Send(JsonConvert.SerializeObject(r)); 
-                    }
-                catch (Exception err){
-                    WriteString($"Error: {err.Message}");
-                };
-
-                try { WriteString($"{u.Name}({u.Context.ClientAddress}) отправьте информацию"); }
-                catch (Exception err)
+            if (OnlineUsers != null && OnlineUsers?.Keys?.Count > 0)
+                foreach (var u in OnlineUsers.Keys)
                 {
-                    WriteString($"Error: {err.Message}");
-                };
-            }
+                    try
+                    {
+                        var r = new Response { Type = ResponseType.Message, Data = $"SendCollectedData" };
+                        u.Context.Send(JsonConvert.SerializeObject(r));
+                    }
+                    catch (Exception err)
+                    {
+                        WriteString($"Error: {err.Message}");
+                    };
+
+                    try { WriteString($"{u.Name}({u.Context.ClientAddress}) отправьте информацию"); }
+                    catch (Exception err)
+                    {
+                        WriteString($"Error: {err.Message}");
+                    };
+                }
 
             //WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
 
@@ -460,10 +462,10 @@ namespace ASTAWebServer
         readonly ServiceProcessInstaller processInstaller;
 
         public static readonly string serviceExePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        public static  string serviceName => "ASTAWebServer";
-        public static  string serviceDisplayName => "ASTA Web Server";
-        public static  string serviceDescription => "ASTA Websocket SuperServer's gathering windows service";
-        private static  int timeoutMilliseconds => 2000;
+        public static string serviceName => "ASTAWebServer";
+        public static string serviceDisplayName => "ASTA Web Server";
+        public static string serviceDescription => "ASTA Websocket SuperServer's gathering windows service";
+        private static int timeoutMilliseconds => 2000;
         public ServiceInstallerUtility()
         {
             //InitializeComponent();
