@@ -6,7 +6,6 @@ namespace ASTAWebServer
     static class Program
     {
         static ASTAWebServer service = null;
-        static WindowsServiceClass uninstallService = null;
 
         /// <summary>
         /// The main entry point for the application
@@ -14,7 +13,9 @@ namespace ASTAWebServer
         /// <param name="args"> Parameters for install: ASTAService.exe -i, uninstall: ASTAService.exe -u </param>
         static void Main(string[] args)
         {
-            uninstallService = new WindowsServiceClass();
+            AssemblyLoader.RegisterAssemblyLoader();
+
+           WindowsServiceClass   uninstallService = new WindowsServiceClass();
             uninstallService.EvntInfoMessage += UninstallService_EvntInfoMessage;
 
             service = new ASTAWebServer();

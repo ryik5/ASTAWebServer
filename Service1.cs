@@ -20,12 +20,11 @@ namespace ASTAWebServer
 
         private System.Timers.Timer timer = null;
         private System.Threading.Thread webThread = null;
-        static Logger log = null;
 
         public ASTAWebServer()
         {
             InitializeComponent();
-            log = new Logger();
+        //    AssemblyLoader.RegisterAssemblyLoader();
         }
 
 
@@ -61,6 +60,7 @@ namespace ASTAWebServer
             timer.Enabled = true;
             timer.Start();
             timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
+            WriteString("timer is running...");
         }
 
         protected override void OnStop()
@@ -102,13 +102,13 @@ namespace ASTAWebServer
 
         public void WriteString(string text)
         {
-            if (log != null)
-                log.WriteString(text);
+          Logger.WriteString(text);
         }
 
         private void StartWebSocket()
         {
             aServer.Start();
+            WriteString("Websocket server is waiting...");
         }
 
         private void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -117,6 +117,7 @@ namespace ASTAWebServer
             timer.Stop();
 
             if (OnlineUsers != null && OnlineUsers?.Keys?.Count > 0)
+            {
                 foreach (var u in OnlineUsers.Keys)
                 {
                     try
@@ -135,8 +136,12 @@ namespace ASTAWebServer
                         WriteString($"Error: {err.Message}");
                     };
                 }
-
-            //WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
+            }
+            else
+            {
+                WriteString($"Служба '{nameof(ASTAWebServer)}' активная...");
+                WriteString($"Нет ни одного подключенного клиента.");
+            }
 
             timer.Enabled = true;
             timer.Start();
@@ -149,7 +154,7 @@ namespace ASTAWebServer
         /// <param name="context">The user's connection context</param>
         public void OnConnect(UserContext context)
         {
-            WriteString("Client Connected from: " + context.ClientAddress);
+            WriteString("Client is connected from: " + context.ClientAddress);
 
             var me = new User { Context = context };
 
@@ -422,28 +427,29 @@ namespace ASTAWebServer
     }
 
 
-    public class Logger
+    internal static class Logger
     {
-        readonly object obj = new object();
-
-        public Logger() { }
-
-        public void WriteString(string text)
+        public static void WriteString(string text)
         {
             RecordEntry("Message", text);
         }
-        private void RecordEntry(string eventText, string text)
+        private static void RecordEntry(string eventText, string text)
         {
-            string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            string pathToLog = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), System.IO.Path.GetFileNameWithoutExtension(path) + ".log");
-            lock (obj)
+            try
             {
-                using (System.IO.StreamWriter writer = new System.IO.StreamWriter(pathToLog, true))
+                object obj = new object();
+                string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string pathToLog = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), System.IO.Path.GetFileNameWithoutExtension(path) + ".log");
+                lock (obj)
                 {
-                    writer.WriteLine($"{DateTime.Now.ToString("yyyy.MM.dd|hh:mm:ss")}|{eventText}|{text}");
-                    writer.Flush();
+                    using (System.IO.StreamWriter writer = new System.IO.StreamWriter(pathToLog, true))
+                    {
+                        writer.WriteLine($"{DateTime.Now.ToString("yyyy.MM.dd|hh:mm:ss")}|{eventText}|{text}");
+                        writer.Flush();
+                    }
                 }
             }
+            catch { }
         }
     }
 
