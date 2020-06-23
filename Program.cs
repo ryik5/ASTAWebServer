@@ -15,7 +15,7 @@ namespace ASTAWebServer
         {
             AssemblyLoader.RegisterAssemblyLoader();
 
-           WindowsServiceClass   uninstallService = new WindowsServiceClass();
+            WindowsServiceClass uninstallService = new WindowsServiceClass();
             uninstallService.EvntInfoMessage += UninstallService_EvntInfoMessage;
 
             service = new ASTAWebServer();
