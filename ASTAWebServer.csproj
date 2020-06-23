@@ -95,16 +95,16 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Resources\Alchemy.dll.deflated" />
+    <EmbeddedResource Include="Resources\log4net.dll.deflated" />
+    <EmbeddedResource Include="Resources\Newtonsoft.Json.dll.deflated" />
+    <EmbeddedResource Include="Resources\SuperSocket.ClientEngine.dll.deflated" />
+    <EmbeddedResource Include="Resources\SuperSocket.Common.dll.deflated" />
+    <EmbeddedResource Include="Resources\SuperSocket.Facility.dll.deflated" />
+    <EmbeddedResource Include="Resources\SuperSocket.ProtoBase.dll.deflated" />
+    <EmbeddedResource Include="Resources\SuperSocket.SocketBase.dll.deflated" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
-    <EmbeddedResource Include="Resources\SuperSocket.ClientEngine.dll" />
-    <EmbeddedResource Include="Resources\SuperSocket.ProtoBase.dll" />
-    <EmbeddedResource Include="Resources\SuperSocket.Common.dll" />
-    <EmbeddedResource Include="Resources\SuperSocket.Facility.dll" />
-    <EmbeddedResource Include="Resources\SuperSocket.SocketBase.dll" />
-    <EmbeddedResource Include="Resources\log4net.dll" />
-    <EmbeddedResource Include="Resources\Alchemy.dll" />
     <Content Include="RYIK_40.ico" />
   </ItemGroup>
   <ItemGroup>

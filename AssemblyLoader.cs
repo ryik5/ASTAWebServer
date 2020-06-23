@@ -2,7 +2,7 @@
 using System.Linq;
 using System.IO;
 using System.Reflection;
-
+using System.IO.Compression;
 
 namespace ASTAWebServer
 {
@@ -23,7 +23,6 @@ namespace ASTAWebServer
 
         private static Assembly LoadAssemblyFromManifest(string targetAssemblyName)
         {
-         //   Logger.WriteString("targetAssemblyName: " + targetAssemblyName);
             Assembly executingAssembly = Assembly.GetExecutingAssembly();
             byte[] assemblyRawBytes = null;
 
@@ -43,47 +42,26 @@ namespace ASTAWebServer
                 {
                     if (stream == null)
                     {
-                //        Logger.WriteString($"length = 0. {resourceName} not found");
                         return null;
                     }
 
-                    assemblyRawBytes = new byte[stream.Length];
-                    stream.Read(assemblyRawBytes, 0, assemblyRawBytes.Length);
-
-             //       Logger.WriteString($"{resourceName} loaded");
+                    using (var deflated = new DeflateStream(stream, CompressionMode.Decompress))
+                    using (var reader = new BinaryReader(deflated))
+                    {
+                        var one_megabyte = 1024 * 1024;
+                        assemblyRawBytes = reader.ReadBytes(one_megabyte);
+                    }
                 }
             }
-            catch (Exception err) { 
-            //    Logger.WriteString($"err: {err.ToString()}"); 
-            }
+            catch { }
 
             return Assembly.Load(assemblyRawBytes);
-
-            //Assembly executingAssembly = Assembly.GetExecutingAssembly();
-            //AssemblyName assemblyName = new AssemblyName(targetAssemblyName);
-
-            //string resourceName = DetermineEmbeddedResourceName(assemblyName, executingAssembly);
-
-            //using (Stream stream = executingAssembly.GetManifestResourceStream(resourceName))
-            //{
-            //    if (stream == null)
-            //        return null;
-
-            //    using (var deflated = new DeflateStream(stream, CompressionMode.Decompress))
-            //    using (var reader = new BinaryReader(deflated))
-            //    {
-            //        var one_megabyte = 1024 * 1024;
-            //        var buffer = reader.ReadBytes(one_megabyte);
-            //        return Assembly.Load(buffer);
-            //    }
-            //}
-
         }
 
         private static string DetermineEmbeddedResourceName(AssemblyName assemblyName, Assembly executingAssembly)
         {
             //This assumes you have the assemblies in a folder named "Resources"
-            string resourceName = $"{executingAssembly.GetName().Name}.Resources.{assemblyName.Name}.dll";
+            string resourceName = $"{executingAssembly.GetName().Name}.Resources.{assemblyName.Name}.dll.deflated";
 
             //This logic finds the assembly manifest name even if it's not an case match for the requested assembly                          
             var matchingResource = executingAssembly
