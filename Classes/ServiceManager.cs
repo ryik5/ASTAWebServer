@@ -8,7 +8,8 @@ namespace ASTAWebServer
 {
     public class ServiceManager : IServiceManageable
     {
-        static WebSocketServer aServer;
+        WebSocketServer aServer;
+        readonly Logger log = new Logger();
         /// <summary>
         /// Store the list of online users. Wish I had a ConcurrentList. 
         /// </summary>
@@ -89,10 +90,10 @@ namespace ASTAWebServer
             AddInfo("timer is running...");
         }
 
-
         public void AddInfo(string text)
         {
-            Logger.WriteString(text);
+            if (log != null)
+                log.WriteString(text);
         }
 
         private void StartWebSocket()
@@ -187,7 +188,7 @@ namespace ASTAWebServer
                         break;
 
                     case (int)CommandType.Message:
-                        r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Data}" };
+                        r = new Response { Type = ResponseType.ReadyToWork, Data = $"CollectData" };
                         AddInfo($"Получено сообщение: {obj?.Data?.Value}");
                         try { ChatMessage(obj.Data.Value, context); }
                         catch (Exception err) { AddInfo($"Ошибка ChatMessage: {err.Message}"); }
@@ -198,6 +199,9 @@ namespace ASTAWebServer
                         AddInfo($"Смена имени: {obj?.Name?.Value}");
                         try { NameChange(obj.Name.Value, context); }
                         catch (Exception err) { AddInfo($"Ошибка NameChange: {err.Message}"); }
+                        break;
+                    default:
+                        AddInfo($"Команда не распознана");
                         break;
                 }
             }
@@ -375,14 +379,14 @@ namespace ASTAWebServer
         }
     }
 
-        /// <summary>
-        /// Holds the name and context instance for an online user
-        /// </summary>
-        public class User
-        {
-            public string Name = String.Empty;
-            public UserContext Context { get; set; }
-        }
+    /// <summary>
+    /// Holds the name and context instance for an online user
+    /// </summary>
+    public class User
+    {
+        public string Name = String.Empty;
+        public UserContext Context { get; set; }
+    }
 
     /// <summary>
     /// Defines the response object to send back to the client
