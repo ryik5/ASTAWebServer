@@ -6,6 +6,7 @@ namespace ASTAWebServer
     static class Program
     {
         static ASTAWebServer service = null;
+        static IServiceManageable serviceManagable = null;
 
         /// <summary>
         /// The main entry point for the application
@@ -18,12 +19,13 @@ namespace ASTAWebServer
             WindowsServiceClass uninstallService = new WindowsServiceClass();
             uninstallService.EvntInfoMessage += UninstallService_EvntInfoMessage;
 
-            service = new ASTAWebServer();
+            serviceManagable = new ServiceManager();
+            service = new ASTAWebServer(serviceManagable);
 
             if (args?.Length > 0)
             {
                 foreach (var str in args)
-                    service.WriteString($"Got environment argument '{str}'");
+                    serviceManagable.AddInfo($"Got environment argument '{str}'");
             }
 
             ServiceBase[] ServicesToRun;
@@ -47,14 +49,15 @@ namespace ASTAWebServer
                         case "i":
                             if (!ServiceInstallerUtility.Install())
                             {
-                                //  MessageBox.Show("Failed to install service");
+                                serviceManagable.AddInfo("Failed to install service");
                             }
                             else
                             {
-                                service.Start();
-                                //   MessageBox.Show("Running service");
+                                serviceManagable.OnStart();
+                                serviceManagable.AddInfo("Running service");
                             }
                             break;
+
                         case "uninstall":
                         case "u":
                             ServiceInstallerUtility.StopService();
@@ -62,19 +65,19 @@ namespace ASTAWebServer
                             uninstallService.Uninstall(serviceName);
                             if (!ServiceInstallerUtility.Uninstall())
                             {
-                                //  MessageBox.Show("Failed to uninstall service");
+                                serviceManagable.AddInfo("Failed to uninstall service");
                             }
                             else
                             {
-                                //      MessageBox.Show("Service stopped. Goodbye.");
+                                serviceManagable.AddInfo("Service stopped. Goodbye.");
                             }
 
                             string processName = System.IO.Path.GetFileName(ServiceInstallerUtility.serviceExePath);
                             System.Diagnostics.Process.Start("taskkill", $"/F /IM {processName}");
-
                             break;
+
                         default:
-                            service.Start();
+                            serviceManagable.OnStart();
                             // ServiceInstallerUtility.Install();
                             break;
                     }
@@ -95,7 +98,7 @@ namespace ASTAWebServer
 
         private static void UninstallService_EvntInfoMessage(object sender, TextEventArgs e)
         {
-            service.WriteString(e.Message);
+            serviceManagable.AddInfo(e.Message);
         }
     }
 }

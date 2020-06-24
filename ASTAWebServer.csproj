@@ -78,6 +78,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyLoader.cs" />
+    <Compile Include="Classes\IServiceManageable.cs" />
+    <Compile Include="Classes\Logger.cs" />
+    <Compile Include="Classes\ServiceInstallClasses.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Classes\ServiceManager.cs" />
+    <Compile Include="Classes\TextEventArgs.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
