@@ -8,7 +8,6 @@ namespace ASTAWebServer
 {
     internal static class AssemblyLoader
     {
-        //https://stackoverrun.com/ru/q/4794740
         internal static void RegisterAssemblyLoader()
         {
             AppDomain currentDomain = AppDomain.CurrentDomain;

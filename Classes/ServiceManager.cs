@@ -83,7 +83,7 @@ namespace ASTAWebServer
             }
             webThread.Start();
 
-            timer = new System.Timers.Timer(30000);//создаём объект таймера
+            timer = new System.Timers.Timer(30000);
             timer.Enabled = true;
             timer.Start();
             timer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
@@ -121,7 +121,7 @@ namespace ASTAWebServer
                         AddInfo($"Error: {err.Message}");
                     };
 
-                    try { AddInfo($"{u.Name}({u.Context.ClientAddress}) отправьте информацию"); }
+                    try { AddInfo($"{u.Name}({u.Context.ClientAddress}) send information"); }
                     catch (Exception err)
                     {
                         AddInfo($"Error: {err.Message}");
@@ -130,8 +130,8 @@ namespace ASTAWebServer
             }
             else
             {
-                AddInfo($"Служба '{nameof(ASTAWebServer)}' активная...");
-                AddInfo($"Нет ни одного подключенного клиента.");
+                AddInfo($"Service '{nameof(ASTAWebServer)}' is active...");
+                AddInfo($"No clients are currently connected.");
             }
 
             timer.Enabled = true;
@@ -160,7 +160,7 @@ namespace ASTAWebServer
         public void OnReceive(UserContext context)
         {
             var json = context.DataFrame.ToString();
-            AddInfo($"От: \"{context.ClientAddress}\" получены \"сырые\" данные: {json}");
+            AddInfo($"From: \"{context.ClientAddress}\" got new data: {json}");
 
             Response r = null;
             dynamic obj = null;
@@ -169,11 +169,11 @@ namespace ASTAWebServer
                 // <3 dynamics
                 obj = JsonConvert.DeserializeObject(json);
 
-                AddInfo($"Десериализованные данные: {obj}");
+                AddInfo($"Deserilized: {obj}");
             }
             catch (Exception e) // Bad JSON! For shame.
             {
-                r = new Response { Type = ResponseType.Message, Data = $" Сейчас {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
+                r = new Response { Type = ResponseType.Message, Data = $"Now {DateTime.Now.ToString("yyyy-MM-dd hh:MM:ss")} и ты спросил {json}{Environment.NewLine} это ошибка: {e.Message}" };
             }
 
             if (obj != null)
@@ -181,27 +181,27 @@ namespace ASTAWebServer
                 switch ((int)obj.Type)
                 {
                     case (int)CommandType.Register:
-                        r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        AddInfo($"Получен запрос на регистрацию: {obj?.Name?.Value}");
+                        r = new Response { Type = ResponseType.Message, Data = $"You sent {obj?.Name}" };
+                        AddInfo($"Received registration request: {obj?.Name?.Value}");
                         try { Register(obj.Name, context); }
-                        catch (Exception err) { AddInfo($"Ошибка Register: {err.Message}"); }
+                        catch (Exception err) { AddInfo($"Error Register: {err.Message}"); }
                         break;
 
                     case (int)CommandType.Message:
                         r = new Response { Type = ResponseType.ReadyToWork, Data = $"CollectData" };
-                        AddInfo($"Получено сообщение: {obj?.Data?.Value}");
+                        AddInfo($"Received message: {obj?.Data?.Value}");
                         try { ChatMessage(obj.Data.Value, context); }
-                        catch (Exception err) { AddInfo($"Ошибка ChatMessage: {err.Message}"); }
+                        catch (Exception err) { AddInfo($"Error ChatMessage: {err.Message}"); }
                         break;
 
                     case (int)CommandType.NameChange:
-                        r = new Response { Type = ResponseType.Message, Data = $"Вы отправили {obj?.Name}" };
-                        AddInfo($"Смена имени: {obj?.Name?.Value}");
+                        r = new Response { Type = ResponseType.Message, Data = $"You sent {obj?.Name}" };
+                        AddInfo($"Name change: {obj?.Name?.Value}");
                         try { NameChange(obj.Name.Value, context); }
-                        catch (Exception err) { AddInfo($"Ошибка NameChange: {err.Message}"); }
+                        catch (Exception err) { AddInfo($"Error NameChange: {err.Message}"); }
                         break;
                     default:
-                        AddInfo($"Команда не распознана");
+                        AddInfo($"Command not recognized");
                         break;
                 }
             }
@@ -216,7 +216,7 @@ namespace ASTAWebServer
         public void OnSend(UserContext context)
         {
             var json = context.DataFrame.ToString();
-            AddInfo($"Отправил: {context.ClientAddress} сообщение: {json}");
+            AddInfo($"Sent: {context.ClientAddress} msg: {json}");
         }
 
         /// <summary>
